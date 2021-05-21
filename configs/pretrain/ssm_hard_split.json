@@ -2,7 +2,7 @@
     "input_length" : 50,
     "output_length" : 50,
     "num_train_epochs" : 4,
-    "output_dir" : "outputs/t5_pretrain_kgpt_ssm",
+    "output_dir" : "outputs/t5_pretrain_kgpt_ssm_hard_split",
     "dataset" : "kgpt",
     "train_batch_size" : 70,
     "learning_rate" : 1e-3,
@@ -16,7 +16,7 @@
     "wandb_log": true,
     "wandb_project": "curriculum",
     "wandb_run_name" : "T5_large_pretrain_kgpt_ssm",
-    "mode" : "baseline",
+    "mode" : "hard-split",
     "valid_on_recentQA" : false,
     "check_validation" : false,
     "checkpoint_path": ""
