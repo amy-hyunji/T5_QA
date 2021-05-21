@@ -315,7 +315,7 @@ class BaselineDataset(Dataset):
         self.epoch = int(args.num_train_epochs)
 
         if args.mode == "baseline":
-            self.dataset = self.raw
+            self.dataset = self.raw.sample(frac=1).reset_index(drop=True)
         elif args.mode == "hard-split":
             easy_df, hard_df = self.hard_split(self.raw)
             if mode_type == "easy":
