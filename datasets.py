@@ -1,4 +1,4 @@
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import Dataset, DataLoader, ConcatDataset
 import pandas as pd
 import json
 import re
@@ -296,6 +296,85 @@ class Pretrain(Dataset):
         target_mask = targets["attention_mask"].squeeze()
 
         return {"source_ids": source_ids, "source_mask": src_mask, "target_ids": target_ids, "target_mask": target_mask, 'cnt': cnt}
+
+
+"""
+dataset for baseline-ssmlearning
+columns: [original, input, output, cnt]
+"""
+class BaselineDataset(Dataset):
+    def __init__(self, tokenizer, type_path, num_samples, input_length, output_length, args, mode_type=None):
+        if args.dataset == "kgpt":
+            self.raw= pd.read_csv("/mnt/hyunji/KGPT/dataset/wikidata/toy_dataset.csv")
+        else:
+            raise NameError('Select the correct Dataset!')
+        self.input_length = input_length
+        self.tokenizer = tokenizer
+        self.output_length = output_length
+        self.len = len(self.dataset['input'])
+        self.epoch = int(args.num_train_epochs)
+
+        if args.mode == "baseline":
+            self.dataset = self.raw
+        elif args.mode == "hard-split":
+            easy_df, hard_df = self.hard_split(self.raw)
+            if mode_type == "easy":
+                self.dataset = pd.concat([easy_df, easy_df])
+            elif mode_type == "hard":
+                self.dataset = pd.concat([hard_df, hard_df])
+        elif args.mode == "curriculum":
+            epoch_dict = self.curriculum_split(self.raw) # return in format {'0': dataset, '1': dataset, ...}
+            self.dataset = epoch_dict[mode_type] # mode_type -> str(epoch#)
+        elif args.mode == "anti-curriculum":
+            epoch_dict = self.curriculum_split(self.raw, "anti")
+            self.dataset = epoch_dict[mode_type]
+
+    # return easy_df, hard_df
+    # cut in half
+    def hard_split(self, raw):
+        if (self.len%2 != 0):
+            print("### Warning!! hard_split easy and hard case number is different!!")
+        split_ = int(self.len/2)
+        return raw[:split], raw[split:] 
+
+    def curriculum_split(self, raw, list_type="default"):
+        ret_dict = {}
+        split_num = int(self.len/self.epoch)
+        if list_type is "anti":
+            # return anti-curriculum
+            raw = raw.iloc[::-1]
+        elif list_type is "default":
+            pass
+        else:
+            raise NameError('Select the correct list_type in curriculum split')
+        for _epoch in range(self.epoch):
+            ret_dict[str(_epoch)] = raw[:split_num*(_epoch+1)] if _epoch != self.epoch-1 else raw
+
+    def __len__(self):  
+        return(self.len)
+
+    def convert_to_features(self, example_batch):
+        original = example_batch['original']
+        input_ = example_batch['input']
+        output_ = example_batch['output']
+        cnt = example_batch['cnt']
+
+        source = self.tokenizer.batch_encode_plus([input_], max_length=self.input_length, padding='max_length', truncation=True, return_tensors='pt')
+        targets = self.tokenizer.batch_encode_plus([target_], max_length = self.output_length, padding='max_length', truncation=True, return_tensors='pt')
+
+        return original, source, targets, cnt
+
+    def __getitem__(self, idx):
+        original, source, targets, cnt = self.convert_to_features(self.dataset.iloc[idx])
+
+        source_ids = source['input_ids'].squeeze()
+        target_ids = targets['input_ids'].squeeze()
+
+        src_mask = source['attention_mask'].squeeze()
+        target_mask = targets['attnetion_mask'].squeeze()
+
+        return {'source_ids': source_ids, 'source_mask': src_mask, 'target_ids': target_ids, 'target_mask': target_mask, 'original': original, 'cnt': cnt}
+
 
 
 class Probe(Dataset):

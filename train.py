@@ -95,7 +95,7 @@ if __name__ == '__main__':
     args = argparse.Namespace(**args_dict)
 
     ## Define Checkpoint function
-    if args.mode == 'pretrain':
+    if args.mode in ['pretrain', 'baseline', 'hard-split', 'curriculum', 'anti-curriculum']:
         #checkpoint_callback = pl.callbacks.ModelCheckpoint(
         #    dirpath = args.output_dir, monitor="bleu_score", mode="max", save_top_k=1, save_last=True
         #)

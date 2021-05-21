@@ -121,6 +121,17 @@ class T5FineTuner(pl.LightningModule):
         if args.mode == 'pretrain':
             return Pretrain(tokenizer=tokenizer, type_path=type_path, num_samples=num_samples,  input_length=args.max_input_length, 
                             output_length=args.max_output_length, args=args)
+        elif args.mode == "baseline":
+            return BaselineDataset(tokenizer=tokenizer, type_path=type_path, num_samples=num_samples, input_length=args.max_input_length, 
+                            output_length=args.max_output_length, args=args)
+        elif args.mode == "hard-split":
+            easy_dataset = BaselineDataset(tokenizer=tokenizer, type_path=type_path, num_samples=num_samples, input_length=args.max_input_length, output_length=args.max_output_length, args=args, mode_type='easy')
+            hard_dataset = BaselineDataset(tokenizer=tokenizer, type_path=type_path, num_samples=num_samples, input_length=args.max_input_length, output_length=args.max_output_length, args=args, mode_type='hard')
+            return ConcatDataset([easy_dataset, hard_dataset])
+        elif args.mode in ["curriculum", "anti-curriculum"]:
+            _dataset_list = []
+            for _epoch in range(int(args.num_train_epochs)):
+                _dataset_list.append(BaselineDataset(tokenizer=tokenizer, type_path=type_path, num_samples=num_samples, input_length=args.max_input_length, output_lenth=args.max_output_length, args=args, mode_type=str(_epoch)))
         elif args.mode =='finetune':
             return Finetune(tokenizer=tokenizer, type_path=type_path, num_samples=num_samples,  input_length=args.max_input_length, 
                             output_length=args.max_output_length, args=args)
