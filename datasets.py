@@ -6,7 +6,7 @@ import math
 from transformers import pipeline
 import os
 import random
-os.environ['TRANSFORMERS_CACHE'] = '/mnt/joel/'
+os.environ['TRANSFORMERS_CACHE'] = '/mnt/.cache/huggingface'
 
 from nlp import load_dataset
 import pprint
@@ -104,6 +104,8 @@ class Pretrain(Dataset):
             self.dataset = self.split_into_segment(pd.read_csv("recentQA/recentqa_context.csv", delimiter='\t'),input_length)
         elif self.args.dataset == 'triviaQA_context':
             self.dataset = pd.read_csv("/triviaQA/context_preprocessed.csv", delimiter=',')
+        elif self.args.dataset == "kgpt":
+            self.dataset = pd.read_csv("/mnt/hyunji/KGPT/dataset/wikidata/toy_dataset.csv")
         else:
             raise NameError('Select the correct Dataset!')
         self.input_length = input_length
@@ -114,7 +116,7 @@ class Pretrain(Dataset):
         for i in range(100):
             sentinels.append(f'<extra_id_{i}>')
         self.sentinels = sentinels
-  
+
     def split_into_segment(self, ds, input_length):
         new_rows = []
         input_length = int(input_length * 0.7)
@@ -193,6 +195,8 @@ class Pretrain(Dataset):
         NER = self.nlp(text)
         NERs=[]
         disected=False
+        ner_cnt = 0
+
         for n in NER:
             t = n['word']
             if '#' in t:
@@ -208,6 +212,7 @@ class Pretrain(Dataset):
                     disected=True
                 end_index = n['end']
             else:
+                ner_cnt += 1
                 if disected==True:
                     disected=False
                     NERs.append(text[start_index:end_index])
@@ -225,7 +230,7 @@ class Pretrain(Dataset):
         for i in range(len(tokens)):
             if '*' in tokens[i]:
                 mask[i] = 1
-        return mask
+        return mask, ner_cnt
     
     def noise_span_to_unique_sentinel(self, text, mask):
         tokens = text.split()
@@ -269,19 +274,20 @@ class Pretrain(Dataset):
             print("Input Text: ", self.clean_text(example_batch['context']))
         text = self.clean_text(example_batch['context'])
         if self.ssm:
-            mask = self.salient_span_corruption_mask(text)
+            mask, cnt = self.salient_span_corruption_mask(text)
         else:
             mask = self.span_corruption_mask(text)
         input_ = self.noise_span_to_unique_sentinel(text,mask)
         target_ = self.nonnoise_span_to_unique_sentinel(text,mask)
+        
         source = self.tokenizer.batch_encode_plus([input_], max_length=self.input_length, 
                                                      padding='max_length', truncation=True, return_tensors="pt")
         targets = self.tokenizer.batch_encode_plus([target_], max_length=self.output_length, 
                                                      padding='max_length', truncation=True, return_tensors="pt")
-        return source, targets
+        return source, targets, cnt
   
     def __getitem__(self, index):
-        source, targets = self.convert_to_features(self.dataset.iloc[index])
+        source, targets, cnt = self.convert_to_features(self.dataset.iloc[index])
         
         source_ids = source["input_ids"].squeeze()
         target_ids = targets["input_ids"].squeeze()
@@ -289,7 +295,7 @@ class Pretrain(Dataset):
         src_mask    = source["attention_mask"].squeeze()
         target_mask = targets["attention_mask"].squeeze()
 
-        return {"source_ids": source_ids, "source_mask": src_mask, "target_ids": target_ids, "target_mask": target_mask}
+        return {"source_ids": source_ids, "source_mask": src_mask, "target_ids": target_ids, "target_mask": target_mask, 'cnt': cnt}
 
 
 class Probe(Dataset):
