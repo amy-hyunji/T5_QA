@@ -1,0 +1,23 @@
+{
+    "input_length" : 50,
+    "output_length" : 50,
+    "num_train_epochs" : 5,
+    "output_dir" : "outputs/t5_pretrain_kgpt_ssm",
+    "dataset" : "kgpt",
+    "train_batch_size" : 70,
+    "learning_rate" : 1e-3,
+    "model" : "t5-base",
+    "gradient_accumulation_steps" : 1,
+    "ngpu" : 4,
+    "num_workers" : 8,
+    "resume_from_checkpoint" : null,
+    "accelerator" : "ddp",
+    "CUDA_VISIBLE_DEVICES" : "0,1,2,3",
+    "wandb_log": true,
+    "wandb_project": "curricula",
+    "wandb_run_name" : "T5_base_pretrain_kgpt_ssm",
+    "mode" : "pretrain",
+    "valid_on_recentQA" : false,
+    "check_validation" : false,
+    "checkpoint_path": ""
+}
