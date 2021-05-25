@@ -294,3 +294,9 @@ class T5FineTuner(pl.LightningModule):
         test_dataset = self.get_dataset(tokenizer=self.tokenizer, type_path="test", num_samples=n_samples, args=self.hparams)
         
         return DataLoader(test_dataset, batch_size=self.hparams.eval_batch_size, num_workers=self.hparams.num_workers, shuffle=False)
+
+    def on_save_checkpoint(self, checkpoint):
+        save_path = os.path.join(self.output_dir, "best_tfmr")
+        self.model.config.save_step = self.step_count
+        self.model.save_pretrained(save_path)
+        self.tokenizer.save_pretrained(save_path)
