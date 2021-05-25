@@ -305,13 +305,16 @@ columns: [original, input, output, cnt]
 class BaselineDataset(Dataset):
     def __init__(self, tokenizer, type_path, num_samples, input_length, output_length, args, mode_type=None):
         if args.dataset == "kgpt":
-            self.raw= pd.read_csv("/mnt/hyunji/KGPT/dataset/wikidata/toy_dataset.csv")
+            #self.raw= pd.read_csv("/mnt/hyunji/KGPT/dataset/wikidata/toy_dataset.csv")
+            self.raw= pd.read_csv("/home/joel/curricula/wiki_toy_ordered.csv")
+        elif args.dataset == "privacy":
+            self.raw = pd.read_csv("/mnt/hyunji/ethics/dataset_for_privacy.csv")
         else:
             raise NameError('Select the correct Dataset!')
         self.input_length = input_length
         self.tokenizer = tokenizer
         self.output_length = output_length
-        self.len = len(self.dataset['input'])
+        self.len = len(self.raw['input'])
         self.epoch = int(args.num_train_epochs)
 
         if args.mode == "baseline":
@@ -335,7 +338,7 @@ class BaselineDataset(Dataset):
         if (self.len%2 != 0):
             print("### Warning!! hard_split easy and hard case number is different!!")
         split_ = int(self.len/2)
-        return raw[:split], raw[split:] 
+        return raw[:split_], raw[split_:] 
 
     def curriculum_split(self, raw, list_type="default"):
         ret_dict = {}
@@ -349,18 +352,19 @@ class BaselineDataset(Dataset):
             raise NameError('Select the correct list_type in curriculum split')
         for _epoch in range(self.epoch):
             ret_dict[str(_epoch)] = raw[:split_num*(_epoch+1)] if _epoch != self.epoch-1 else raw
+        return ret_dict
 
     def __len__(self):  
         return(self.len)
 
     def convert_to_features(self, example_batch):
-        original = example_batch['original']
+        original = example_batch['original'] if 'original' in example_batch.keys() else ''
         input_ = example_batch['input']
         output_ = example_batch['output']
-        cnt = example_batch['cnt']
+        cnt = example_batch['cnt'] if 'cnt' in example_batch.keys() else 0
 
         source = self.tokenizer.batch_encode_plus([input_], max_length=self.input_length, padding='max_length', truncation=True, return_tensors='pt')
-        targets = self.tokenizer.batch_encode_plus([target_], max_length = self.output_length, padding='max_length', truncation=True, return_tensors='pt')
+        targets = self.tokenizer.batch_encode_plus([output_], max_length = self.output_length, padding='max_length', truncation=True, return_tensors='pt')
 
         return original, source, targets, cnt
 
@@ -371,7 +375,7 @@ class BaselineDataset(Dataset):
         target_ids = targets['input_ids'].squeeze()
 
         src_mask = source['attention_mask'].squeeze()
-        target_mask = targets['attnetion_mask'].squeeze()
+        target_mask = targets['attention_mask'].squeeze()
 
         return {'source_ids': source_ids, 'source_mask': src_mask, 'target_ids': target_ids, 'target_mask': target_mask, 'original': original, 'cnt': cnt}
 

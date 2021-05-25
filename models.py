@@ -8,9 +8,9 @@ from transformers import (
     get_linear_schedule_with_warmup
 )
 import torch
-from datasets import Finetune, Pretrain, Probe
+from dataset import Finetune, Pretrain, Probe, BaselineDataset
 from torch.utils.data import RandomSampler
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import Dataset, DataLoader, ConcatDataset 
 
 import argparse
 import time
@@ -132,6 +132,7 @@ class T5FineTuner(pl.LightningModule):
             _dataset_list = []
             for _epoch in range(int(args.num_train_epochs)):
                 _dataset_list.append(BaselineDataset(tokenizer=tokenizer, type_path=type_path, num_samples=num_samples, input_length=args.max_input_length, output_lenth=args.max_output_length, args=args, mode_type=str(_epoch)))
+            return ConcatDataset(_dataset_list)
         elif args.mode =='finetune':
             return Finetune(tokenizer=tokenizer, type_path=type_path, num_samples=num_samples,  input_length=args.max_input_length, 
                             output_length=args.max_output_length, args=args)

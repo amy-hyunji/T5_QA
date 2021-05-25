@@ -25,7 +25,7 @@ from models import T5FineTuner
 #from models_module_output import T5FineTuner
 #from models_module_encoder import T5FineTuner
 #from models_ewc import T5FineTuner
-from datasets import Pretrain, Finetune, Probe
+from dataset import Pretrain, Finetune, Probe
 from torch.utils.data import Dataset, DataLoader
 
 def set_seed(seed):
