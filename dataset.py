@@ -307,8 +307,6 @@ class BaselineDataset(Dataset):
         if args.dataset == "kgpt":
             #self.raw= pd.read_csv("/mnt/hyunji/KGPT/dataset/wikidata/toy_dataset.csv")
             self.raw= pd.read_csv("/home/joel/curricula/wiki_toy_ordered.csv")
-        elif args.dataset == "privacy":
-            self.raw = pd.read_csv("/mnt/hyunji/ethics/dataset_for_privacy.csv")
         else:
             raise NameError('Select the correct Dataset!')
         self.input_length = input_length
@@ -322,9 +320,11 @@ class BaselineDataset(Dataset):
         elif args.mode == "hard-split":
             easy_df, hard_df = self.hard_split(self.raw)
             if mode_type == "easy":
-                self.dataset = pd.concat([easy_df, easy_df])
+               self.dataset = pd.concat([easy_df, easy_df])
+               self.dataset = self.raw.sample(frac=1).reset_index(drop=True)
             elif mode_type == "hard":
-                self.dataset = pd.concat([hard_df, hard_df])
+               self.dataset = pd.concat([hard_df, hard_df])
+               self.dataset = self.raw.sample(frac=1).reset_index(drop=True)
         elif args.mode == "curriculum":
             epoch_dict = self.curriculum_split(self.raw) # return in format {'0': dataset, '1': dataset, ...}
             self.dataset = epoch_dict[mode_type] # mode_type -> str(epoch#)
@@ -408,7 +408,7 @@ class Probe(Dataset):
         total_cnt=0
         string_match_cnt=0
         non_entity_cnt=0
-        entity_lst = pd.read_csv('lama/entity_list.csv')
+        entity_lst = pd.read_csv('/home/joel/T5_QA/lama/entity_list.csv')
         entity_lst = list(entity_lst['entity'])
         entity_relation = {}
         for relation in relations:
@@ -477,7 +477,7 @@ class Probe(Dataset):
                 data.append(json.loads(line))
         return data
 
-    def get_TREx_parameters(self, data_path_pre="lama/"):
+    def get_TREx_parameters(self, data_path_pre="/home/joel/T5_QA/lama/"):
         relations = self.load_file("{}relations.jsonl".format(data_path_pre))
         data_path_pre += "TREx/"
         data_path_post = ".jsonl"
@@ -501,19 +501,19 @@ class Probe(Dataset):
                 "template_negated": "[X] did not die in [Y] .",
             },
         ]
-        data_path_pre = "lama/Google_RE/"
+        data_path_pre = "/home/joel/T5_QA/lama/Google_RE/"
         data_path_post = "_test.jsonl"
         return relations, data_path_pre, data_path_post
 
 
-    def get_ConceptNet_parameters(self,data_path_pre="lama/"):
+    def get_ConceptNet_parameters(self,data_path_pre="/home/joel/T5_QA/lama/"):
         relations = [{"relation": "test"}]
         data_path_pre += "ConceptNet/"
         data_path_post = ".jsonl"
         return relations, data_path_pre, data_path_post
 
 
-    def get_Squad_parameters(self,data_path_pre="lama/"):
+    def get_Squad_parameters(self,data_path_pre="/home/joel/T5_QA/lama/"):
         relations = [{"relation": "test"}]
         data_path_pre += "Squad/"
         data_path_post = ".jsonl"

@@ -15,6 +15,7 @@ from torch.utils.data import Dataset, DataLoader, ConcatDataset
 import argparse
 import time
 import re
+import os
 import numpy as np
 import string
 from string import punctuation
@@ -125,9 +126,11 @@ class T5FineTuner(pl.LightningModule):
             return BaselineDataset(tokenizer=tokenizer, type_path=type_path, num_samples=num_samples, input_length=args.max_input_length, 
                             output_length=args.max_output_length, args=args)
         elif args.mode == "hard-split":
-            easy_dataset = BaselineDataset(tokenizer=tokenizer, type_path=type_path, num_samples=num_samples, input_length=args.max_input_length, output_length=args.max_output_length, args=args, mode_type='easy')
-            hard_dataset = BaselineDataset(tokenizer=tokenizer, type_path=type_path, num_samples=num_samples, input_length=args.max_input_length, output_length=args.max_output_length, args=args, mode_type='hard')
-            return ConcatDataset([easy_dataset, hard_dataset])
+            easy_dataset1 = BaselineDataset(tokenizer=tokenizer, type_path=type_path, num_samples=num_samples, input_length=args.max_input_length, output_length=args.max_output_length, args=args, mode_type='easy')
+            easy_dataset2 = BaselineDataset(tokenizer=tokenizer, type_path=type_path, num_samples=num_samples, input_length=args.max_input_length, output_length=args.max_output_length, args=args, mode_type='easy')
+            hard_dataset1 = BaselineDataset(tokenizer=tokenizer, type_path=type_path, num_samples=num_samples, input_length=args.max_input_length, output_length=args.max_output_length, args=args, mode_type='hard')
+            hard_dataset2 = BaselineDataset(tokenizer=tokenizer, type_path=type_path, num_samples=num_samples, input_length=args.max_input_length, output_length=args.max_output_length, args=args, mode_type='hard')
+            return ConcatDataset([easy_dataset1, easy_dataset2, hard_dataset1, hard_dataset2])
         elif args.mode in ["curriculum", "anti-curriculum"]:
             _dataset_list = []
             for _epoch in range(int(args.num_train_epochs)):
