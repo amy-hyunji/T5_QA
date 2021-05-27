@@ -1,0 +1,23 @@
+{
+    "input_length" : 25,
+    "output_length" : 4,
+    "num_train_epochs" : 1,
+    "output_dir" : "outputs/t5_pretrain_kgpt_ssm_hard_split_lama",
+    "dataset" : "trex",
+    "train_batch_size" : 32,
+    "learning_rate" : 1e-3,
+    "model" : "t5-large",
+    "gradient_accumulation_steps" : 1,
+    "ngpu" : 1,
+    "num_workers" : 8,
+    "resume_from_checkpoint" : null,
+    "accelerator" : "ddp",
+    "CUDA_VISIBLE_DEVICES" : "3",
+    "wandb_log": false,
+    "wandb_project": "curriculum",
+    "wandb_run_name" : "T5_large_pretrain_kgpt_ssm",
+    "mode" : "probe",
+    "valid_on_recentQA" : false,
+    "check_validation" : true,
+    "checkpoint_path": "/mnt/hyunji/curriculum/T5_QA/outputs/t5_pretrain_kgpt_ssm_hard_split/epoch=3-step=3999.ckpt"
+}

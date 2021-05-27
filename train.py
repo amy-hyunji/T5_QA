@@ -28,12 +28,23 @@ from models import T5FineTuner
 from dataset import Pretrain, Finetune, Probe
 from torch.utils.data import Dataset, DataLoader
 
+from knockknock import slack_sender
+from slack import get_webhook_url, get_channel
+
 def set_seed(seed):
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
     if torch.cuda.is_available():
         torch.cuda.manual_seed_all(seed)
+
+@slack_sender(webhook_url=get_webhook_url(), channel=get_channel())
+def main(args, train_params):
+    set_seed(42)
+    model = T5FineTuner(args)
+    trainer = pl.Trainer(**train_params)
+    trainer.fit(model)
+    return "Done Curriculum"
 
 if __name__ == '__main__':
     parser = ArgumentParser()
@@ -151,7 +162,8 @@ if __name__ == '__main__':
             text = text.replace("<extra_id_1>", "")
             text = text.replace("<extra_id_2>", "")
             text = text.replace("<extra_id_3>", "")
-            #text = text.replace(".", '')
+            text = text.replace(".", '')
+            text = text.replace(",", '')
             return text     
 
         for batch in iter(loader):
@@ -201,7 +213,11 @@ if __name__ == '__main__':
         print(f'Number of correct predictions out of {total_cnt} : {em_correct_num, subset_correct_num}. Percentage : {em_correct_num / total_cnt, subset_correct_num / total_cnt}')
    
     else:
+
+        main(args, train_params)
+        """
         set_seed(42)
         model = T5FineTuner(args)
         trainer = pl.Trainer(**train_params)
         trainer.fit(model)
+        """
